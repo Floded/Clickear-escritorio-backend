@@ -5,6 +5,26 @@ import fs from "node:fs";
 import path from "node:path";
 
 const isDev = !app.isPackaged;
+const REMOTE_URL = process.env.CLICKEAR_REMOTE_URL ?? "https://clickear.onrender.com";
+
+type AppMode = "online" | "offline";
+
+function modeFile(): string {
+  return path.join(app.getPath("userData"), "mode");
+}
+
+function loadMode(): AppMode {
+  try {
+    const value = fs.readFileSync(modeFile(), "utf8").trim();
+    return value === "online" ? "online" : "offline";
+  } catch {
+    return "offline";
+  }
+}
+
+function saveMode(mode: AppMode): void {
+  fs.writeFileSync(modeFile(), mode, { mode: 0o600 });
+}
 const READY_TIMEOUT_MS = 15_000;
 
 interface BackendHandle {
@@ -117,8 +137,10 @@ function createWindow(url: string): BrowserWindow {
 }
 
 let backend: BackendHandle | null = null;
+let currentMode: AppMode = "offline";
 
 app.whenReady().then(async () => {
+  currentMode = loadMode();
   try {
     backend = await startBackend();
   } catch (error) {
@@ -131,7 +153,19 @@ app.whenReady().then(async () => {
     version: app.getVersion(),
     platform: process.platform,
     backendUrl: backend?.url,
+    mode: currentMode,
+    remoteUrl: REMOTE_URL,
   }));
+
+  ipcMain.handle("app:mode:get", () => currentMode);
+  ipcMain.handle("app:mode:set", (_event, mode: unknown) => {
+    if (mode !== "online" && mode !== "offline") {
+      throw new Error("Modo invalido");
+    }
+    currentMode = mode;
+    saveMode(mode);
+    return currentMode;
+  });
 
   createWindow(backend.url);
 

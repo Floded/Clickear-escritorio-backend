@@ -111,11 +111,13 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 
 ### Fase 3 — Modo híbrido (Auth + Sync v1)
 
-- [ ] Login dual: online → contra `clickear.onrender.com`; offline → backend
-  local.
-- [ ] Outbox en SQLite (tabla `pending_sync`) para writes realizados offline.
-- [ ] Sincronización con *last-write-wins* por `updatedAt` al reconectar.
-- [ ] UI de estado de conexión + cola de sync visible (toasts con `sonner`).
+- [x] 3a: backend de sync — `updatedAt` en modelos, tabla `pending_sync`,
+  migraciones y endpoints `/api/sync/push` + `/api/sync/pull`.
+- [x] 3b: modo online/offline persistido en `userData` (Electron), IPC
+  `app:mode:get` / `app:mode:set` y campos `mode` + `remoteUrl` en
+  `app:info`. El frontend elige el backend (Render vs local) según el modo.
+- [ ] 3c: frontend — login dual, cola de sync offline, last-write-wins y UI de
+  conexión (repo `~/Desktop/Clickear/Frontend`).
 
 ### Fase 4 — Empaquetado y CI
 
@@ -142,12 +144,14 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 | 2026-11-08 | 0 y 1  | Big Pickle (OpenCode)      | Workspace + subtree del backend + Electron funcionando: la ventana carga el React real servido por el backend embebido | `createApp({ mode: "desktop" })` sin rate-limit/HSTS/CORS ni `upgrade-insecure-requests`. Tests 160/160. Falta DB real (Fase 2) y packaging (Fase 4). |
 | 2026-11-08 | CI     | Big Pickle (OpenCode)      | CI movido a `.github/workflows/` de la raíz (antes no se ejecutaba por estar en `backend/`), `render.yaml` para deploy del monorepo | `npm ci` en raíz + migraciones + typecheck + tests. Tests 160/160 en verde. |
 | 2026-11-08 | 2      | Big Pickle (OpenCode)      | Fase 2 completa: schema SQLite, cliente dual por `DATABASE_PROVIDER`, migraciones automáticas y suite contra SQLite | Tests: 162/162 Postgres + 164/164 SQLite. Bundle desktop verificado con SQLite (migraciones + `/api/health`). Sin bloqueantes. |
+| 2026-11-08 | 3a     | Big Pickle (OpenCode)      | Backend de sync completo: `updatedAt`, `pending_sync`, migraciones y endpoints push/pull | Tests: 166/166 Postgres + 168/168 SQLite. |
+| 2026-11-08 | 3b     | Big Pickle (OpenCode)      | Modo online/offline persistido en `userData` + IPC `app:mode:get/set` y `app:info` extendido | Builds Electron y backend OK. Falta 3c (frontend). |
 
 ### Próximo paso inmediato
 
-**Fase 3:** modo híbrido. Empezar por el login dual (online contra
-`clickear.onrender.com` / offline contra el backend local) y luego el outbox
-`pending_sync` con *last-write-wins*.
+**Fase 3c:** integrar el modo en el frontend (`~/Desktop/Clickear/Frontend`):
+axios base URL según `window.desktop.getAppInfo()` (`remoteUrl` vs `backendUrl`),
+login dual y sincronización con el outbox `pending_sync`.
 
 ## 6. Convenciones obligatorias
 
