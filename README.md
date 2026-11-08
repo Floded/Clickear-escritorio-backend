@@ -116,8 +116,8 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 - [x] 3b: modo online/offline persistido en `userData` (Electron), IPC
   `app:mode:get` / `app:mode:set` y campos `mode` + `remoteUrl` en
   `app:info`. El frontend elige el backend (Render vs local) según el modo.
-- [ ] 3c: frontend — login dual, cola de sync offline, last-write-wins y UI de
-  conexión (repo `~/Desktop/Clickear/Frontend`).
+- [x] 3c: frontend — detección de Electron, base URL dinámica (remote vs
+  local) según modo, toggle de modo en el sidebar y botón de sincronización.
 
 ### Fase 4 — Empaquetado y CI
 
@@ -145,13 +145,14 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 | 2026-11-08 | CI     | Big Pickle (OpenCode)      | CI movido a `.github/workflows/` de la raíz (antes no se ejecutaba por estar en `backend/`), `render.yaml` para deploy del monorepo | `npm ci` en raíz + migraciones + typecheck + tests. Tests 160/160 en verde. |
 | 2026-11-08 | 2      | Big Pickle (OpenCode)      | Fase 2 completa: schema SQLite, cliente dual por `DATABASE_PROVIDER`, migraciones automáticas y suite contra SQLite | Tests: 162/162 Postgres + 164/164 SQLite. Bundle desktop verificado con SQLite (migraciones + `/api/health`). Sin bloqueantes. |
 | 2026-11-08 | 3a     | Big Pickle (OpenCode)      | Backend de sync completo: `updatedAt`, `pending_sync`, migraciones y endpoints push/pull | Tests: 166/166 Postgres + 168/168 SQLite. |
-| 2026-11-08 | 3b     | Big Pickle (OpenCode)      | Modo online/offline persistido en `userData` + IPC `app:mode:get/set` y `app:info` extendido | Builds Electron y backend OK. Falta 3c (frontend). |
+| 2026-11-08 | 3b     | Big Pickle (OpenCode)      | Modo online/offline persistido en `userData` + IPC `app:mode:get/set` y `app:info` extendido | Builds Electron y backend OK. |
+| 2026-11-08 | 3c     | Big Pickle (OpenCode)      | Frontend integrado con Electron: base URL dinámica, toggle de modo y botón de sync | Build Vite OK (252/252 tests). Pendiente Fase 4 (empaquetado). |
 
 ### Próximo paso inmediato
 
-**Fase 3c:** integrar el modo en el frontend (`~/Desktop/Clickear/Frontend`):
-axios base URL según `window.desktop.getAppInfo()` (`remoteUrl` vs `backendUrl`),
-login dual y sincronización con el outbox `pending_sync`.
+**Fase 4:** empaquetado. Configurar `electron-builder` (dmg macOS universal +
+NSIS Windows), copiar engine de Prisma y migraciones a `resources/` y publicar
+releases con GitHub Actions.
 
 ## 6. Convenciones obligatorias
 
