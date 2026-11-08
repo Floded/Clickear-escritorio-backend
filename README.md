@@ -150,12 +150,27 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 | 2026-11-08 | 3c     | Big Pickle (OpenCode)      | Frontend integrado con Electron: base URL dinámica, toggle de modo y botón de sync | Build Vite OK (252/252 tests). |
 | 2026-11-08 | 4a     | Big Pickle (OpenCode)      | `electron-builder` configurado y build local verificado (2 dmg); workflow de release agregado | Falta firma/notarización y prueba end-to-end de publicación. |
 
+### Secretos de CI (GitHub Actions)
+
+Para firmar y notarizar en `release.yml`, configurar en el repo (Settings →
+Secrets and variables → Actions):
+
+| Secreto | Uso |
+|---|---|
+| `CSC_LINK` | Certificado de firma (base64 del .p12) para macOS y Windows |
+| `CSC_KEY_PASSWORD` | Contraseña del .p12 |
+| `APPLE_ID` | Apple ID del desarrollador |
+| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password para notarización |
+| `APPLE_TEAM_ID` | Team ID de Apple Developer |
+
+Sin estos secretos el workflow compila y publica sin firma (útil para pruebas).
+
 ### Próximo paso inmediato
 
-**Firma y release:** configurar secretos `CSC_LINK` / `APPLE_ID` /
-`APPLE_APP_SPECIFIC_PASSWORD` en GitHub y publicar un tag `v0.2.0` para
-probar el workflow de release end-to-end. También agregar ícono
-(`build/icon.icns`, `build/icon.ico`).
+**Probar el release:** subir un tag `v0.2.0` y verificar que el workflow
+`release.yml` genera los dmg/nsis, firma (si hay secretos) y publica el
+release en GitHub. Agregar ícono (`build/icon.icns`, `build/icon.ico`) cuando
+esté disponible.
 
 ## 6. Convenciones obligatorias
 
