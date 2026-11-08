@@ -44,11 +44,26 @@ function prismaEngine(): string {
   const dir = isDev
     ? path.join(ROOT_DIR, "backend", "generated", "sqlite")
     : path.join(process.resourcesPath, "prisma");
-  const engine = fs
+  const files = fs
     .readdirSync(dir)
-    .find((file) => file.startsWith("libquery_engine-") || file.startsWith("query_engine-"));
-  if (!engine) throw new Error(`Engine de Prisma no encontrado en ${dir}`);
-  return path.join(dir, engine);
+    .filter((file) => file.startsWith("libquery_engine-") || file.startsWith("query_engine-"));
+  if (files.length === 0) throw new Error(`Engine de Prisma no encontrado en ${dir}`);
+
+  let preferred: string;
+  if (process.platform === "darwin") {
+    if (process.arch === "arm64") {
+      preferred = files.find((file) => file.includes("arm64")) ?? files[0];
+    } else {
+      preferred =
+        files.find((file) => file === "libquery_engine-darwin.dylib.node") ?? files[0];
+    }
+  } else if (process.platform === "win32") {
+    preferred = files.find((file) => file.includes("windows")) ?? files[0];
+  } else {
+    preferred = files[0];
+  }
+
+  return path.join(dir, preferred);
 }
 
 function sqliteMigrationsDir(): string {

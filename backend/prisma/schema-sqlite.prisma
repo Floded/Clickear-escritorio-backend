@@ -3,6 +3,7 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/sqlite"
+  binaryTargets = ["darwin", "darwin-arm64", "windows"]
 }
 
 datasource db {

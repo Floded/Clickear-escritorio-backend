@@ -1,0 +1,57 @@
+appId: com.clickear.desktop
+productName: Clickear
+copyright: Copyright © 2026 Clickear
+
+directories:
+  output: release
+  buildResources: build
+
+# El backend ya viene embebido (esbuild) y los recursos se copian aparte.
+files:
+  - electron/dist/**/*
+  - package.json
+
+extraResources:
+  # Backend embebido (generado por `npm run backend:bundle`)
+  - from: backend/dist-desktop/main.cjs
+    to: backend/main.cjs
+  # Engine de Prisma para SQLite (generado por `npm run db:generate`)
+  - from: backend/generated/sqlite
+    to: prisma
+    filter:
+      - "libquery_engine-*"
+  # Migraciones SQLite aplicadas al primer arranque
+  - from: backend/prisma/sqlite-migrations
+    to: sqlite-migrations
+  # Frontend (build previo en ~/Desktop/Clickear/Frontend/dist)
+  - from: ../Clickear/Frontend/dist
+    to: frontend
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  category: public.app-category.business
+  # icon: build/icon.icns   # agregar cuando exista
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  # icon: build/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+# Firma/notarización: configurar CSC_LINK / APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD
+# en CI cuando se publiquen releases.
+publish:
+  provider: github
+  owner: Floded
+  repo: Clickear-escritorio-backend

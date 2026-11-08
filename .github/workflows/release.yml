@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout desktop
+        uses: actions/checkout@v4
+
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+        with:
+          repository: Floded/Clikear_Front
+          path: ../Clickear/Frontend
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Instalar dependencias (frontend)
+        working-directory: ../Clickear/Frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ../Clickear/Frontend
+        run: npx vite build
+
+      - name: Instalar dependencias (desktop)
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "0"
+
+      - name: Compilar backend y Electron
+        run: npm run backend:bundle && npm run electron:build
+
+      - name: Publicar release
+        run: npx electron-builder --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # CSC_LINK / CSC_KEY_PASSWORD / APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD
+          # para firma y notarización en macOS.

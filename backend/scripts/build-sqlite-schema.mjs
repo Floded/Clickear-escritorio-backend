@@ -17,7 +17,7 @@ const sqliteSchema = schema
   .replace('provider = "postgresql"', 'provider = "sqlite"')
   .replace(
     'provider = "prisma-client-js"',
-    'provider = "prisma-client-js"\n  output   = "../generated/sqlite"',
+    'provider = "prisma-client-js"\n  output   = "../generated/sqlite"\n  binaryTargets = ["darwin", "darwin-arm64", "windows"]',
   );
 
 await writeFile(target, header + sqliteSchema);

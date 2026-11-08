@@ -121,11 +121,12 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 
 ### Fase 4 — Empaquetado y CI
 
-- [ ] Config completa de `electron-builder` (macOS dmg universal + Windows
-  NSIS). Debe copiar `backend/generated/sqlite/libquery_engine-*` a
-  `resources/prisma/` y `backend/prisma/sqlite-migrations/` a
-  `resources/sqlite-migrations/` (rutas que espera `electron/main.ts`).
-- [ ] GitHub Actions + publicación de builds.
+- [x] Config de `electron-builder` (`electron-builder.yml`): dmg macOS
+  (arm64 + x64) y NSIS Windows, con resources (backend, engine Prisma,
+  migraciones, frontend). Verificado con build local (2 dmg generados).
+- [x] GitHub Actions: `.github/workflows/test.yml` (tests) y
+  `.github/workflows/release.yml` (build + publish en tags `v*`).
+- [ ] Firma/notarización macOS y publicación de releases probada end-to-end.
 
 ## 5. Estado de progreso (registro de agentes)
 
@@ -146,13 +147,15 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 | 2026-11-08 | 2      | Big Pickle (OpenCode)      | Fase 2 completa: schema SQLite, cliente dual por `DATABASE_PROVIDER`, migraciones automáticas y suite contra SQLite | Tests: 162/162 Postgres + 164/164 SQLite. Bundle desktop verificado con SQLite (migraciones + `/api/health`). Sin bloqueantes. |
 | 2026-11-08 | 3a     | Big Pickle (OpenCode)      | Backend de sync completo: `updatedAt`, `pending_sync`, migraciones y endpoints push/pull | Tests: 166/166 Postgres + 168/168 SQLite. |
 | 2026-11-08 | 3b     | Big Pickle (OpenCode)      | Modo online/offline persistido en `userData` + IPC `app:mode:get/set` y `app:info` extendido | Builds Electron y backend OK. |
-| 2026-11-08 | 3c     | Big Pickle (OpenCode)      | Frontend integrado con Electron: base URL dinámica, toggle de modo y botón de sync | Build Vite OK (252/252 tests). Pendiente Fase 4 (empaquetado). |
+| 2026-11-08 | 3c     | Big Pickle (OpenCode)      | Frontend integrado con Electron: base URL dinámica, toggle de modo y botón de sync | Build Vite OK (252/252 tests). |
+| 2026-11-08 | 4a     | Big Pickle (OpenCode)      | `electron-builder` configurado y build local verificado (2 dmg); workflow de release agregado | Falta firma/notarización y prueba end-to-end de publicación. |
 
 ### Próximo paso inmediato
 
-**Fase 4:** empaquetado. Configurar `electron-builder` (dmg macOS universal +
-NSIS Windows), copiar engine de Prisma y migraciones a `resources/` y publicar
-releases con GitHub Actions.
+**Firma y release:** configurar secretos `CSC_LINK` / `APPLE_ID` /
+`APPLE_APP_SPECIFIC_PASSWORD` en GitHub y publicar un tag `v0.2.0` para
+probar el workflow de release end-to-end. También agregar ícono
+(`build/icon.icns`, `build/icon.ico`).
 
 ## 6. Convenciones obligatorias
 
