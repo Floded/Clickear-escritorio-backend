@@ -1,0 +1,46 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: clickear
+          POSTGRES_PASSWORD: clickear_dev
+          POSTGRES_DB: clickear_test
+        ports:
+          - "5433:5432"
+        options: >-
+          --health-cmd "pg_isready -U clickear -d clickear_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar tests
+        env:
+          NODE_ENV: test
+          DATABASE_URL: "postgresql://clickear:clickear_dev@localhost:5433/clickear_test?schema=public"
+          JWT_SECRET: "test-secret-do-not-use-in-production"
+          ALLOWED_ORIGIN: "http://localhost:5173"
+        run: npm test
