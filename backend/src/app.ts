@@ -124,7 +124,11 @@ export function createApp(config: AppConfig = {}): Express {
   app.use("/api/inventory-items", authenticate, inventoryItemRouter);
   app.use("/api/assignments", authenticate, assignmentRouter);
   app.use("/api/budgets", authenticate, budgetRouter);
-  app.use("/api/sync", syncRouter);
+  if (isDesktop) {
+    app.use("/api/sync", syncRouter);
+  } else {
+    app.use("/api/sync", authenticate, syncRouter);
+  }
 
   // El frontend se sirve después de los routers: la SPA no debe interceptar /api
   if (isDesktop && config.frontendDist) {

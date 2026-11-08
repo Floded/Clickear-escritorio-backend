@@ -1,9 +1,7 @@
 import "../src/env.js";
 
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../src/prisma/client.js";
 
 // Crea (o actualiza) el usuario administrador inicial a partir del .env
 async function main() {

@@ -15,13 +15,13 @@ describe("sync", () => {
 
   beforeEach(async () => {
     app = createTestApp();
-    await cleanTables(["establishments"]);
+    await cleanTables(["pending_sync", "establishments"]);
     const user = await createTestUser({ email: "sync@clickear.local" });
     authHeader = authCookie(user);
   });
 
   afterEach(async () => {
-    await cleanTables(["establishments"]);
+    await cleanTables(["pending_sync", "establishments"]);
   });
 
   it("push aplica un establecimiento y pull lo devuelve", async () => {
@@ -92,9 +92,29 @@ describe("sync", () => {
     expect(res.body.results[0].status).toBe("unknown_entity");
   });
 
-  it("pull sin since usa epoch", async () => {
-    const res = await supertest(app).get("/api/sync/pull").set("Cookie", authHeader);
-    expect(res.status).toBe(200);
-    expect(res.body.since).toBeDefined();
+  it("pending y ack marcan filas como sincronizadas", async () => {
+    await prisma.pendingSync.create({
+      data: {
+        entity: "establishment",
+        entityId: "CUE-PENDING",
+        operation: "create",
+        payload: { cue: "CUE-PENDING", name: "Pendiente" },
+        updatedAt: new Date(),
+      },
+    });
+
+    const pendingRes = await supertest(app).get("/api/sync/pending").set("Cookie", authHeader);
+    expect(pendingRes.status).toBe(200);
+    expect(pendingRes.body.rows).toHaveLength(1);
+    const id = pendingRes.body.rows[0].id;
+
+    const ackRes = await supertest(app)
+      .post("/api/sync/ack")
+      .set("Cookie", authHeader)
+      .send({ ids: [id] });
+    expect(ackRes.status).toBe(200);
+
+    const after = await supertest(app).get("/api/sync/pending").set("Cookie", authHeader);
+    expect(after.body.rows).toHaveLength(0);
   });
 });

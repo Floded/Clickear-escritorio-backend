@@ -148,6 +148,7 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 | 2026-11-08 | 3a     | Big Pickle (OpenCode)      | Backend de sync completo: `updatedAt`, `pending_sync`, migraciones y endpoints push/pull | Tests: 166/166 Postgres + 168/168 SQLite. |
 | 2026-11-08 | 3b     | Big Pickle (OpenCode)      | Modo online/offline persistido en `userData` + IPC `app:mode:get/set` y `app:info` extendido | Builds Electron y backend OK. |
 | 2026-11-08 | 3c     | Big Pickle (OpenCode)      | Frontend integrado con Electron: base URL dinámica, toggle de modo y botón de sync | Build Vite OK (252/252 tests). |
+| 2026-11-08 | 3d     | Big Pickle (OpenCode)      | Outbox sync end-to-end: Prisma extension popula `pending_sync`, endpoints pending/ack, frontend flush (push+pull) | Tests: 168/168 Postgres + 168/168 SQLite; frontend 252/252. |
 | 2026-11-08 | 4a     | Big Pickle (OpenCode)      | `electron-builder` configurado y build local verificado (2 dmg); workflow de release agregado | Falta firma/notarización y prueba end-to-end de publicación. |
 
 ### Secretos de CI (GitHub Actions)

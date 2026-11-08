@@ -114,4 +114,19 @@ export const syncService = {
 
     return out;
   },
+
+  async pending() {
+    return (prisma as any).pendingSync.findMany({
+      where: { synced: false },
+      orderBy: { id: "asc" },
+    });
+  },
+
+  async ack(ids: number[]) {
+    if (ids.length === 0) return;
+    await (prisma as any).pendingSync.updateMany({
+      where: { id: { in: ids } },
+      data: { synced: true },
+    });
+  },
 };
