@@ -66,7 +66,7 @@ function startBackend(): Promise<BackendHandle> {
       NODE_ENV: "production",
       JWT_SECRET: loadJwtSecret(),
       DATABASE_PROVIDER: "sqlite",
-      DATABASE_URL: `file:${path.join(app.getPath("userData"), "clickear.db")}`,
+      DATABASE_URL: `file:${path.join(app.getPath("userData"), "clickear.db")}?connection_limit=1`,
       PRISMA_QUERY_ENGINE_LIBRARY: prismaEngine(),
       SQLITE_MIGRATIONS_DIR: sqliteMigrationsDir(),
       FRONTEND_DIST: frontendDist(),

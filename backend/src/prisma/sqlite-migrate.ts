@@ -60,13 +60,11 @@ export async function migrateSqlite(): Promise<void> {
     const file = path.join(migrationsDir, id, "migration.sql");
     if (!fs.existsSync(file)) continue;
 
-    // Atómico: si una sentencia falla no queda la migración a medias
+    // Se ejecutan en orden: los PRAGMA deben correr fuera de transacción
     const statements = splitStatements(fs.readFileSync(file, "utf8"));
-    await prisma.$transaction(async (tx) => {
-      for (const statement of statements) {
-        await tx.$executeRawUnsafe(statement);
-      }
-      await tx.$executeRawUnsafe(`INSERT INTO "${MIGRATIONS_TABLE}" ("id") VALUES (?)`, id);
-    });
+    for (const statement of statements) {
+      await prisma.$executeRawUnsafe(statement);
+    }
+    await prisma.$executeRawUnsafe(`INSERT INTO "${MIGRATIONS_TABLE}" ("id") VALUES (?)`, id);
   }
 }

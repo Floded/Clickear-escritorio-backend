@@ -21,6 +21,7 @@ import { authenticate } from "./shared/authenticate.js";
 import { errorHandler } from "./shared/error-handler.js";
 import { healthRouter } from "./routes/health.routes.js";
 import { budgetRouter } from "./modules/budgets/budget.routes.js";
+import { syncRouter } from "./modules/sync/sync.routes.js";
 
 export type AppMode = "web" | "desktop";
 
@@ -123,6 +124,7 @@ export function createApp(config: AppConfig = {}): Express {
   app.use("/api/inventory-items", authenticate, inventoryItemRouter);
   app.use("/api/assignments", authenticate, assignmentRouter);
   app.use("/api/budgets", authenticate, budgetRouter);
+  app.use("/api/sync", syncRouter);
 
   // El frontend se sirve después de los routers: la SPA no debe interceptar /api
   if (isDesktop && config.frontendDist) {
