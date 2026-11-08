@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout desktop
@@ -21,6 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Floded/Clikear_Front
+          ref: dev
           path: ../Clickear/Frontend
 
       - name: Instalar Node.js

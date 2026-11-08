@@ -1,6 +1,6 @@
 {
   "name": "clickear-desktop",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Clickear como app de escritorio (Electron + backend embebido)",
   "workspaces": [

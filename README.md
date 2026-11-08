@@ -121,9 +121,10 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 
 ### Fase 4 — Empaquetado y CI
 
-- [x] Config de `electron-builder` (`electron-builder.yml`): dmg macOS
-  (arm64 + x64) y NSIS Windows, con resources (backend, engine Prisma,
-  migraciones, frontend). Verificado con build local (2 dmg generados).
+- [x] Config de `electron-builder` (`electron-builder.yml`): NSIS Windows (x64)
+  en producción; dmg macOS (arm64 + x64) disponible para desarrollo local.
+  Resources embebidos (backend, engine Prisma, migraciones, frontend).
+  Build local verificado.
 - [x] GitHub Actions: `.github/workflows/test.yml` (tests) y
   `.github/workflows/release.yml` (build + publish en tags `v*`).
 - [ ] Firma/notarización macOS y publicación de releases probada end-to-end.
@@ -153,25 +154,22 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 
 ### Secretos de CI (GitHub Actions)
 
-Para firmar y notarizar en `release.yml`, configurar en el repo (Settings →
-Secrets and variables → Actions):
+La app se distribuye solo en Windows. Para firmar el instalador NSIS,
+configurar en el repo (Settings → Secrets and variables → Actions):
 
 | Secreto | Uso |
 |---|---|
-| `CSC_LINK` | Certificado de firma (base64 del .p12) para macOS y Windows |
-| `CSC_KEY_PASSWORD` | Contraseña del .p12 |
-| `APPLE_ID` | Apple ID del desarrollador |
-| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password para notarización |
-| `APPLE_TEAM_ID` | Team ID de Apple Developer |
+| `CSC_LINK` | Certificado de firma (base64 del .pfx) para Windows |
+| `CSC_KEY_PASSWORD` | Contraseña del .pfx |
 
-Sin estos secretos el workflow compila y publica sin firma (útil para pruebas).
+Sin estos secretos el workflow compila y publica sin firma (Windows mostrará
+advertencia de SmartScreen).
 
 ### Próximo paso inmediato
 
-**Probar el release:** subir un tag `v0.2.0` y verificar que el workflow
-`release.yml` genera los dmg/nsis, firma (si hay secretos) y publica el
-release en GitHub. Agregar ícono (`build/icon.icns`, `build/icon.ico`) cuando
-esté disponible.
+**Probar el release:** subir un tag `v0.2.0` (ya creado) y verificar que el
+workflow `release.yml` genera el instalador NSIS y lo publica. Agregar ícono
+(`build/icon.ico`) cuando esté disponible.
 
 ## 6. Convenciones obligatorias
 
