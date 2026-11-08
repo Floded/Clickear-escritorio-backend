@@ -8,18 +8,22 @@
 ## 1. Contexto del proyecto
 
 **Clickear** es un sistema de despachos / tickets de soporte / inventario para
-técnicos. Actualmente es una web app dividida en dos proyectos:
+técnicos. Es una web app dividida en dos proyectos:
 
-| Parte   | Ruta (relativa a `~/Desktop/Clickear/`) | Stack                                                        |
-| ------- | --------------------------------------- | ------------------------------------------------------------ |
-| Backend | `../Backend/`                           | Express 5, TS, Prisma 6, PostgreSQL, JWT, zod, vitest        |
-| Frontend| `../Frontend/`                          | React 19, Vite, Tailwind 4, shadcn, React Query, React Router |
+| Parte    | Ruta                              | Stack                                                        |
+| -------- | --------------------------------- | ------------------------------------------------------------ |
+| Backend  | `backend/` (este repo, canónico)  | Express 5, TS, Prisma 6, PostgreSQL/SQLite, JWT, zod, vitest  |
+| Frontend | `~/Desktop/Clickear/Frontend/`    | React 19, Vite, Tailwind 4, shadcn, React Query, React Router |
+
+El backend se importó desde `~/Desktop/Clickear/Backend/` con `git subtree`
+(historial preservado) y pasa a ser la fuente canónica. El frontend no se copia:
+se consume solo su `dist/` como input de build.
 
 Ambos proyectos están desplegados en **Render**:
 
 - Backend: `https://clickear.onrender.com`
 - Frontend: `https://clicke-ar.onrender.com/` — sirve el build de React con
-  `../Frontend/server.mjs`, que hace proxy de las rutas `/api` hacia el backend
+  `Frontend/server.mjs`, que hace proxy de las rutas `/api` hacia el backend
   remoto.
 
 ## 2. Objetivo de la migración
@@ -63,22 +67,25 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 ### Fase 0 — Infraestructura Electron
 
 - [x] Crear `Clickear-escritorio/` con este README.
-- [ ] `package.json` raíz con npm workspaces y scripts `desktop:dev` /
+- [x] `package.json` raíz con npm workspaces y scripts `desktop:dev` /
   `desktop:build`.
-- [ ] `electron/main.ts` — `BrowserWindow` (contextIsolation activo), arranque
+- [x] `electron/main.ts` — `BrowserWindow` (contextIsolation activo), arranque
   del backend embebido en un puerto libre y carga de
   `http://127.0.0.1:<port>`.
-- [ ] `electron/preload.ts` — API mínima expuesta vía `ipcRenderer.invoke`.
-- [ ] `electron-builder` configurado (dmg macOS universal / NSIS Windows).
+- [x] `electron/preload.ts` — API mínima expuesta vía `ipcRenderer.invoke`.
+- [ ] `electron-builder` configurado (dmg macOS universal / NSIS Windows)
+  → movido a Fase 4.
 
 ### Fase 1 — Backend empaquetable
 
-- [ ] Entry point `desktop-main.ts` que escucha en un puerto libre (sin puerto
+- [x] Entry point `desktop-main.ts` que escucha en un puerto libre (sin puerto
   fijo) y sin seed de admin automático.
-- [ ] Bundle `esbuild` → `dist-desktop/main.cjs` incluyendo Prisma Client.
+- [x] Bundle `esbuild` → `dist-desktop/main.cjs` incluyendo Prisma Client.
 - [ ] Copiar el `query_engine` binario de Prisma a `resources/` y setear
   `PRISMA_QUERY_ENGINE_LIBRARY` antes de instanciar Prisma.
-- [ ] Todos los tests existentes del backend siguen en verde.
+  → la resolución ya funciona en dev; la copia a `resources/` es parte del
+  empaquetado (Fase 4).
+- [x] Todos los tests existentes del backend siguen en verde (160/160).
 
 ### Fase 2 — Prisma SQLite
 
@@ -118,27 +125,31 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 | ---------- | ------ | -------------------------- | ------------------------------------------ | ------------------- |
 | 2026-11-08 | —      | Big Pickle (OpenCode)      | Plan definido; directorio y README creados | Nada bloquea. Siguiente: Fase 0, scaffold del workspace `desktop/`. |
 | 2026-11-08 | Spike  | Big Pickle (OpenCode)      | Spike esbuild+Prisma **validado**: bundle CJS autocontenido que arranca y responde HTTP | Fix obligatorio: engine por `PRISMA_QUERY_ENGINE_LIBRARY` + `await import()` (no top-level await en CJS). Siguiente: Fase 0. |
+| 2026-11-08 | 0 y 1  | Big Pickle (OpenCode)      | Workspace + subtree del backend + Electron funcionando: la ventana carga el React real servido por el backend embebido | `createApp({ mode: "desktop" })` sin rate-limit/HSTS/CORS ni `upgrade-insecure-requests`. Tests 160/160. Falta DB real (Fase 2) y packaging (Fase 4). |
 
 ### Próximo paso inmediato
 
-**Fase 0, ítem 2:** crear el `package.json` raíz con workspaces, los scripts
-`desktop:dev` / `desktop:build` y el scaffold `electron/` (main + preload).
+**Fase 2:** `schema-sqlite.prisma`, dos clientes Prisma y migraciones SQLite.
+Hoy el backend de escritorio arranca pero apunta a un `DATABASE_URL` placeholder
+(cliente Postgres), así que cualquier query falla.
 
 ## 6. Convenciones obligatorias
 
 - Código en **inglés** (nombres de variables, funciones, clases); comentarios en
   **español** y solo cuando aporten valor.
 - Clean code / SOLID / DRY. Sin magia, sin comentarios superfluos.
-- **Después de cada cambio, ejecutar los tests** (`npm test` en `../Backend` y
-  `../Frontend`) y no cerrar una fase sin que pasen en verde.
+- **Después de cada cambio, ejecutar los tests** (`npm test` en este repo y en
+  `~/Desktop/Clickear/Frontend`) y no cerrar una fase sin que pasen en verde.
 - Marcar un ítem como `[x]` solo cuando su verificación (build/tests) pase.
-- No duplicar el código del backend ni del frontend: consumirlos por ruta
-  relativa.
+- **No duplicar código**: el backend es canónico en `backend/` y el frontend se
+  consume por su `dist/`. No copiar el frontend a este repo.
 
 ## 7. Referencias
 
-- Backend: `../Backend/README.md`, `../Backend/src/`, `../Backend/prisma/schema.prisma`
-- Frontend: `../Frontend/README.md`, `../Frontend/src/lib/api.ts` (usa
-  `VITE_API_URL`), `../Frontend/server.mjs` (proxy en Render)
+- Backend: `backend/README.md`, `backend/src/`, `backend/prisma/schema.prisma`
+- Frontend: `~/Desktop/Clickear/Frontend/README.md`,
+  `~/Desktop/Clickear/Frontend/src/lib/api.ts` (usa `VITE_API_URL`),
+  `~/Desktop/Clickear/Frontend/server.mjs` (proxy en Render)
 - Frontend remoto: `https://clicke-ar.onrender.com/`
-- Ideas futuras: `../Backend/lista-de-ideas.md`
+- Ideas futuras: `backend/lista-de-ideas.md`
+- Plan vigente: `~/.opencode/plan/desktop_backend_plan.md`
