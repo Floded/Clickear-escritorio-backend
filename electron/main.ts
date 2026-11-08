@@ -22,13 +22,19 @@ function backendEntry(): string {
 
 function prismaEngine(): string {
   const dir = isDev
-    ? path.join(ROOT_DIR, "node_modules", ".prisma", "client")
+    ? path.join(ROOT_DIR, "backend", "generated", "sqlite")
     : path.join(process.resourcesPath, "prisma");
   const engine = fs
     .readdirSync(dir)
     .find((file) => file.startsWith("libquery_engine-") || file.startsWith("query_engine-"));
   if (!engine) throw new Error(`Engine de Prisma no encontrado en ${dir}`);
   return path.join(dir, engine);
+}
+
+function sqliteMigrationsDir(): string {
+  return isDev
+    ? path.join(ROOT_DIR, "backend", "prisma", "sqlite-migrations")
+    : path.join(process.resourcesPath, "sqlite-migrations");
 }
 
 function frontendDist(): string {
@@ -59,9 +65,10 @@ function startBackend(): Promise<BackendHandle> {
       ELECTRON_RUN_AS_NODE: "1",
       NODE_ENV: "production",
       JWT_SECRET: loadJwtSecret(),
-      // Fase 2 reemplaza el cliente Prisma por el de SQLite
+      DATABASE_PROVIDER: "sqlite",
       DATABASE_URL: `file:${path.join(app.getPath("userData"), "clickear.db")}`,
       PRISMA_QUERY_ENGINE_LIBRARY: prismaEngine(),
+      SQLITE_MIGRATIONS_DIR: sqliteMigrationsDir(),
       FRONTEND_DIST: frontendDist(),
     },
   });

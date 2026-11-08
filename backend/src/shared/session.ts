@@ -1,9 +1,8 @@
 import jwt from "jsonwebtoken";
 
 import type { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
 
-export const prisma = new PrismaClient();
+import { prisma } from "../prisma/client.js";
 
 export const COOKIE_NAME = "auth_token";
 

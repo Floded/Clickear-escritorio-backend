@@ -1,6 +1,6 @@
 import { Prisma, type ItemAssignment } from "@prisma/client";
 
-import { prisma } from "../../prisma/client.js";
+import { prisma, isSqlite } from "../../prisma/client.js";
 import {
   ConflictError,
   NotFoundError,
@@ -86,8 +86,11 @@ export const assignmentService = {
    */
   async create(input: CreateAssignmentInput): Promise<ItemAssignment> {
     return prisma.$transaction(async (tx) => {
-      // Lock pesimista de la fila del ítem
-      await tx.$queryRaw`SELECT id FROM "inventory_items" WHERE id = ${input.inventoryItemId} FOR UPDATE`;
+      // Lock pesimista de la fila del ítem. SQLite serializa las escrituras
+      // (un solo writer) y no soporta FOR UPDATE.
+      if (!isSqlite) {
+        await tx.$queryRaw`SELECT id FROM "inventory_items" WHERE id = ${input.inventoryItemId} FOR UPDATE`;
+      }
 
       const item = await tx.inventoryItem.findUnique({
         where: { id: input.inventoryItemId },
@@ -140,7 +143,10 @@ export const assignmentService = {
    */
   async return(id: number, input: ReturnAssignmentInput): Promise<ItemAssignment> {
     return prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "item_assignments" WHERE id = ${id} FOR UPDATE`;
+      // En SQLite la escritura ya está serializada: no aplica FOR UPDATE
+      if (!isSqlite) {
+        await tx.$queryRaw`SELECT id FROM "item_assignments" WHERE id = ${id} FOR UPDATE`;
+      }
 
       const assignment = await tx.itemAssignment.findUnique({
         where: { id },

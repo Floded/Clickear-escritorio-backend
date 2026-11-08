@@ -10,6 +10,7 @@ import {
   toPaginatedResult,
   type PaginatedResult,
 } from "../../shared/pagination.js";
+import { containsInsensitive } from "../../shared/prisma-filters.js";
 import type {
   CreateInventoryItemInput,
   ListInventoryItemsQuery,
@@ -20,7 +21,7 @@ export const inventoryItemService = {
   async list(query: ListInventoryItemsQuery): Promise<PaginatedResult<InventoryItem>> {
     const where: Prisma.InventoryItemWhereInput = {
       supplierId: query.supplierId,
-      name: query.search ? { contains: query.search, mode: "insensitive" } : undefined,
+      name: query.search ? containsInsensitive(query.search) : undefined,
       availableQuantity:
         query.hasStock === "true"
           ? { gt: 0 }

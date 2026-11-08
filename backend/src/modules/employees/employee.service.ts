@@ -2,6 +2,7 @@ import { Prisma, type Employee } from "@prisma/client";
 
 import { prisma } from "../../prisma/client.js";
 import { ConflictError, NotFoundError } from "../../shared/http-error.js";
+import { containsInsensitive } from "../../shared/prisma-filters.js";
 import {
   toPaginatedResult,
   type PaginatedResult,
@@ -17,8 +18,8 @@ export const employeeService = {
     const where: Prisma.EmployeeWhereInput = {
       OR: query.search
         ? [
-            { fullName: { contains: query.search, mode: "insensitive" } },
-            { dniOrFileNumber: { contains: query.search, mode: "insensitive" } },
+            { fullName: containsInsensitive(query.search) },
+            { dniOrFileNumber: containsInsensitive(query.search) },
           ]
         : undefined,
       isActive: query.isActive === undefined ? undefined : query.isActive === "true",

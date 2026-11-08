@@ -1,0 +1,255 @@
+// GENERADO por scripts/build-sqlite-schema.mjs a partir de schema.prisma.
+// No editar a mano: ejecutar "npm run db:sqlite:schema".
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/sqlite"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ACCESO
+// ==========================================
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+// ==========================================
+// MÓDULO 1: DESPACHO Y TICKETS DE SOPORTE
+// ==========================================
+
+model DispatchOrder {
+  id                Int      @id @default(autoincrement())
+  dispatchCode      String   @map("dispatch_code")
+  dispatchTimestamp DateTime @map("dispatch_timestamp")
+  listStatus        String   @map("list_status")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  establishments    Establishment[]
+  technicians       DispatchTechnician[]
+
+  @@map("dispatch_orders")
+}
+
+model Establishment {
+  cue                  String   @id
+  dispatchOrderId      Int?     @map("dispatch_order_id")
+  name                 String  
+  department           String? 
+  locality             String? 
+  address              String? 
+  phone                String? 
+  distanceKm           Decimal? @map("distance_km")
+  directorName         String?  @map("director_name")
+  isSecondaryBuilding  Boolean  @map("is_secondary_building") @default(false)
+
+  // SetNull: al borrar una orden de despacho el establecimiento del catálogo
+  // sobrevive y queda disponible para otra orden
+  dispatchOrder DispatchOrder? @relation(fields: [dispatchOrderId], references: [id], onDelete: SetNull)
+  tickets       Ticket[]
+  budgets       Budget[]
+
+  @@map("establishments")
+}
+
+model Technician {
+  id       Int    @id @default(autoincrement())
+  fullName String @map("full_name")
+
+  dispatchOrders DispatchTechnician[]
+
+  @@map("technicians")
+}
+
+// Relación N:M entre órdenes y técnicos
+model DispatchTechnician {
+  dispatchOrderId Int @map("dispatch_order_id")
+  technicianId    Int @map("technician_id")
+
+  dispatchOrder DispatchOrder @relation(fields: [dispatchOrderId], references: [id], onDelete: Cascade)
+  technician    Technician    @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@id([dispatchOrderId, technicianId])
+  @@map("dispatch_technicians")
+}
+
+model Ticket {
+  ticketId           BigInt    @id @map("ticket_id")
+  establishmentCue   String?   @map("establishment_cue")
+  assignedEmployeeId Int?      @map("assigned_employee_id")
+  title              String   
+  glpiClosedTicket   String?   @map("glpi_closed_ticket")
+  openingTimestamp   DateTime? @map("opening_timestamp")
+  status             String    @default("ABIERTO")
+
+  // Restrict: no se borra un empleado que tenga historial de tickets
+  assignedEmployee Employee? @relation(fields: [assignedEmployeeId], references: [id], onDelete: Restrict)
+  establishment    Establishment? @relation(fields: [establishmentCue], references: [cue], onDelete: Restrict)
+  assignments      TicketAssignment[]
+  invoices         Invoice[]
+
+  @@index([assignedEmployeeId])
+  @@map("tickets")
+}
+
+// Historial de asignación de tickets a empleados (una fila activa por ticket)
+model TicketAssignment {
+  id         Int       @id @default(autoincrement())
+  ticketId   BigInt    @map("ticket_id")
+  employeeId Int       @map("employee_id")
+  assignedAt DateTime  @default(now()) @map("assigned_at")
+  releasedAt DateTime? @map("released_at")
+
+  ticket   Ticket   @relation(fields: [ticketId], references: [ticketId], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId])
+  @@index([employeeId])
+  @@map("ticket_assignments")
+}
+
+// ==========================================
+// MÓDULO 2: INVENTARIO Y STOCK
+// ==========================================
+
+model Supplier {
+  id           Int      @id @default(autoincrement())
+  name         String  
+  contactPhone String?  @map("contact_phone")
+  contactEmail String?  @map("contact_email")
+  website      String? 
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  inventoryItems InventoryItem[]
+
+  @@map("suppliers")
+}
+
+model Employee {
+  id                Int      @id @default(autoincrement())
+  fullName          String   @map("full_name")
+  dniOrFileNumber   String   @unique @map("dni_or_file_number")
+  phone             String? 
+  isActive          Boolean  @map("is_active") @default(true)
+
+  assignments       ItemAssignment[]
+  assignedTickets   Ticket[]
+  ticketAssignments TicketAssignment[]
+
+  @@map("employees")
+}
+
+model InventoryItem {
+  id                Int      @id @default(autoincrement())
+  supplierId        Int?     @map("supplier_id")
+  name              String  
+  description       String? 
+  availableQuantity Int      @map("available_quantity") @default(0)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+
+  supplier    Supplier?        @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  assignments ItemAssignment[] @relation("ItemAssignments")
+  budgetLines BudgetLine[] @relation("BudgetLines")
+
+  @@map("inventory_items")
+}
+
+model ItemAssignment {
+  id               Int       @id @default(autoincrement())
+  inventoryItemId  Int       @map("inventory_item_id")
+  employeeId       Int       @map("employee_id")
+  quantityAssigned Int       @map("quantity_assigned")
+  deliveryDate     DateTime  @map("delivery_date")
+  returnDate       DateTime? @map("return_date")
+  notes            String?  
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  inventoryItem InventoryItem @relation("ItemAssignments", fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  employee      Employee      @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  @@map("item_assignments")
+}
+
+// ==========================================
+// MÓDULO 3: FACTURACIÓN ARCA (PREPARACIÓN)
+// ==========================================
+
+model Invoice {
+  id                Int       @id @default(autoincrement())
+  ticketId          BigInt?   @map("ticket_id")
+  voucherType       Int       @map("voucher_type")
+  docType           Int       @map("doc_type")
+  docNumber         String    @map("doc_number")
+  amount            Decimal  
+  cae               String?  
+  caeExpirationDate DateTime? @map("cae_expiration_date")
+  status            String    @default("PENDING")
+  errorMessage      String?   @map("error_message")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  ticket Ticket? @relation(fields: [ticketId], references: [ticketId], onDelete: SetNull)
+
+  @@map("invoices")
+}
+
+// ==========================================
+// MÓDULO 4: PRESUPUESTOS
+// ==========================================
+
+model Budget {
+  id                Int       @id @default(autoincrement())
+  code              String    @map("budget_code")
+  customerName      String    @map("customer_name")
+  establishmentCue  String?   @map("establishment_cue")
+  issueDate         DateTime  @default(now()) @map("issue_date")
+  validUntil        DateTime? @map("valid_until")
+  status            String    @default("DRAFT") @map("status")
+  notes             String?   @map("notes")
+  total             Decimal  
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  establishment     Establishment? @relation(fields: [establishmentCue], references: [cue], onDelete: SetNull)
+  lines             BudgetLine[]
+
+  @@map("budgets")
+}
+
+model BudgetLine {
+  id                Int       @id @default(autoincrement())
+  budgetId          Int       @map("budget_id")
+  inventoryItemId   Int?      @map("inventory_item_id")
+  description       String   
+  quantity          Int       @map("quantity") @default(1)
+  unitPrice         Decimal   @map("unit_price")
+  subtotal          Decimal   @map("subtotal")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  budget      Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem? @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull, name: "BudgetLines")
+
+  @@map("budget_lines")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  action     String   @map("action")
+  resource   String?  @map("resource")
+  details    Json?    @map("details")
+  timestamp  DateTime @default(now()) @map("timestamp")
+
+  @@map("audit_logs")
+}

@@ -1,13 +1,13 @@
 import "../env.js";
 
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { createApp } from "../app.js";
+import { isSqlite, prisma } from "../prisma/client.js";
 import { signSession, COOKIE_NAME } from "../shared/session.js";
 import type { Express } from "express";
 import type { SessionPayload } from "../shared/session.js";
 
-export const prisma = new PrismaClient();
+export { prisma };
 
 export interface TestUser {
   id: number;
@@ -48,6 +48,26 @@ export async function createTestUser(overrides?: {
   return { id: user.id, email: user.email, name: user.name };
 }
 
+async function deleteRows(tables: string[]): Promise<void> {
+  if (tables.length === 0) return;
+
+  if (isSqlite) {
+    // SQLite no tiene TRUNCATE: se borran las filas y se difieren las FK para
+    // no depender del orden de las tablas.
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe("PRAGMA defer_foreign_keys = ON");
+      for (const table of tables) {
+        await tx.$executeRawUnsafe(`DELETE FROM "${table}"`);
+      }
+    });
+    return;
+  }
+
+  await prisma.$queryRawUnsafe(
+    `TRUNCATE TABLE ${tables.map((t) => `"${t}"`).join(", ")} CASCADE`,
+  );
+}
+
 export async function cleanDb(): Promise<void> {
   // No truncar 'users': se necesita para tests de auth que corren en paralelo
   const tables = [
@@ -67,14 +87,9 @@ export async function cleanDb(): Promise<void> {
     "employees",
   ];
 
-  await prisma.$queryRawUnsafe(
-    `TRUNCATE TABLE ${tables.map((t) => `"${t}"`).join(", ")} CASCADE`,
-  );
+  await deleteRows(tables);
 }
 
 export async function cleanTables(tableNames: string[]): Promise<void> {
-  if (tableNames.length === 0) return;
-  await prisma.$queryRawUnsafe(
-    `TRUNCATE TABLE ${tableNames.map((t) => `"${t}"`).join(", ")} CASCADE`,
-  );
+  await deleteRows(tableNames);
 }

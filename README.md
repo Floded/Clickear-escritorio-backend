@@ -56,9 +56,11 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 - **Modo**: híbrido (offline-first con sincronización opcional).
 - **Bundle del backend**: `esbuild` a un único archivo CJS, reutilizando el
   código actual de `../Backend/` sin duplicarlo.
-- **Prisma**: doble schema — un `.prisma` para PostgreSQL (existente) y otro
-  para SQLite; dos clientes generados en rutas separadas; la variable
-  `DATABASE_PROVIDER` decide cuál usar en runtime.
+- **Prisma**: doble schema — `prisma/schema.prisma` para PostgreSQL y
+  `prisma/schema-sqlite.prisma` (generado por
+  `scripts/build-sqlite-schema.mjs`) para SQLite. El cliente Postgres usa la
+  salida por defecto (`@prisma/client`); el de SQLite se genera en
+  `generated/sqlite/`. `DATABASE_PROVIDER=sqlite` decide cuál usar en runtime.
 - **Seguridad Electron**: `contextIsolation: true`, `nodeIntegration: false`,
   preload mínimo con `ipcRenderer.invoke`.
 - `JWT_SECRET` en desktop se genera y se persiste en `userData` (nunca
@@ -96,13 +98,16 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 
 ### Fase 2 — Prisma SQLite
 
-- [ ] `../Backend/prisma/schema-sqlite.prisma` (mismos modelos, sin
-  `@db.VarChar` / `@db.Timestamp`, que son exclusivos de PostgreSQL).
-- [ ] Generar dos clientes Prisma en rutas separadas
-  (`generated/postgres`, `generated/sqlite`).
-- [ ] Migraciones SQLite propias en `../Backend/prisma/sqlite-migrations/`,
-  aplicadas automáticamente en el primer arranque.
-- [ ] Suite de tests corriendo también contra SQLite.
+- [x] `prisma/schema-sqlite.prisma` (mismos modelos, sin `@db.VarChar` /
+  `@db.Timestamp`, exclusivos de PostgreSQL). Se regenera desde
+  `schema.prisma` con `npm run db:sqlite:schema`.
+- [x] Dos clientes Prisma: Postgres por defecto (`@prisma/client`) y SQLite en
+  `generated/sqlite`. La selección la hace `src/prisma/client.ts` según
+  `DATABASE_PROVIDER`.
+- [x] Migraciones SQLite propias en `prisma/sqlite-migrations/`, aplicadas
+  automáticamente al primer arranque (`src/prisma/sqlite-migrate.ts`).
+- [x] Suite de tests corriendo también contra SQLite (`npm run test:sqlite`;
+  `npm test` corre ambas).
 
 ### Fase 3 — Modo híbrido (Auth + Sync v1)
 
@@ -115,7 +120,9 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 ### Fase 4 — Empaquetado y CI
 
 - [ ] Config completa de `electron-builder` (macOS dmg universal + Windows
-  NSIS).
+  NSIS). Debe copiar `backend/generated/sqlite/libquery_engine-*` a
+  `resources/prisma/` y `backend/prisma/sqlite-migrations/` a
+  `resources/sqlite-migrations/` (rutas que espera `electron/main.ts`).
 - [ ] GitHub Actions + publicación de builds.
 
 ## 5. Estado de progreso (registro de agentes)
@@ -134,12 +141,13 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 | 2026-11-08 | Spike  | Big Pickle (OpenCode)      | Spike esbuild+Prisma **validado**: bundle CJS autocontenido que arranca y responde HTTP | Fix obligatorio: engine por `PRISMA_QUERY_ENGINE_LIBRARY` + `await import()` (no top-level await en CJS). Siguiente: Fase 0. |
 | 2026-11-08 | 0 y 1  | Big Pickle (OpenCode)      | Workspace + subtree del backend + Electron funcionando: la ventana carga el React real servido por el backend embebido | `createApp({ mode: "desktop" })` sin rate-limit/HSTS/CORS ni `upgrade-insecure-requests`. Tests 160/160. Falta DB real (Fase 2) y packaging (Fase 4). |
 | 2026-11-08 | CI     | Big Pickle (OpenCode)      | CI movido a `.github/workflows/` de la raíz (antes no se ejecutaba por estar en `backend/`), `render.yaml` para deploy del monorepo | `npm ci` en raíz + migraciones + typecheck + tests. Tests 160/160 en verde. |
+| 2026-11-08 | 2      | Big Pickle (OpenCode)      | Fase 2 completa: schema SQLite, cliente dual por `DATABASE_PROVIDER`, migraciones automáticas y suite contra SQLite | Tests: 162/162 Postgres + 164/164 SQLite. Bundle desktop verificado con SQLite (migraciones + `/api/health`). Sin bloqueantes. |
 
 ### Próximo paso inmediato
 
-**Fase 2:** `schema-sqlite.prisma`, dos clientes Prisma y migraciones SQLite.
-Hoy el backend de escritorio arranca pero apunta a un `DATABASE_URL` placeholder
-(cliente Postgres), así que cualquier query falla.
+**Fase 3:** modo híbrido. Empezar por el login dual (online contra
+`clickear.onrender.com` / offline contra el backend local) y luego el outbox
+`pending_sync` con *last-write-wins*.
 
 ## 6. Convenciones obligatorias
 

@@ -2,6 +2,7 @@ import { Prisma, type Supplier } from "@prisma/client";
 
 import { prisma } from "../../prisma/client.js";
 import { NotFoundError } from "../../shared/http-error.js";
+import { containsInsensitive } from "../../shared/prisma-filters.js";
 import {
   toPaginatedResult,
   type PaginatedResult,
@@ -17,8 +18,8 @@ export const supplierService = {
     const where: Prisma.SupplierWhereInput = query.search
       ? {
           OR: [
-            { name: { contains: query.search, mode: "insensitive" } },
-            { contactEmail: { contains: query.search, mode: "insensitive" } },
+            { name: containsInsensitive(query.search) },
+            { contactEmail: containsInsensitive(query.search) },
           ],
         }
       : {};

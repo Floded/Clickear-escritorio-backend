@@ -2,6 +2,7 @@ import { Prisma, type Ticket } from "@prisma/client";
 
 import { prisma } from "../../prisma/client.js";
 import { ConflictError, NotFoundError } from "../../shared/http-error.js";
+import { containsInsensitive } from "../../shared/prisma-filters.js";
 import {
   toPaginatedResult,
   type PaginatedResult,
@@ -38,9 +39,7 @@ export const ticketService = {
           : typeof query.employeeId === "number"
             ? query.employeeId
             : undefined,
-      title: query.search
-        ? { contains: query.search, mode: "insensitive" }
-        : undefined,
+      title: query.search ? containsInsensitive(query.search) : undefined,
       establishment: query.technicianId
         ? {
             dispatchOrder: {

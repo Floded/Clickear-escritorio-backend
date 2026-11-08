@@ -4,6 +4,8 @@
 import type { AddressInfo } from "node:net";
 
 import { createApp } from "./app.js";
+import { isSqlite } from "./prisma/client.js";
+import { migrateSqlite } from "./prisma/sqlite-migrate.js";
 
 export interface DesktopBackend {
   url: string;
@@ -37,6 +39,8 @@ export function startDesktopBackend(options: DesktopBackendOptions = {}): Promis
 }
 
 async function run(): Promise<void> {
+  if (isSqlite) await migrateSqlite();
+
   const backend = await startDesktopBackend({
     frontendDist: process.env.FRONTEND_DIST,
     port: Number(process.env.PORT) || 0,

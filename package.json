@@ -12,10 +12,10 @@
     "desktop:build": "npm run backend:bundle && npm run electron:build && electron-builder",
     "backend:bundle": "esbuild backend/src/desktop-main.ts --bundle --platform=node --format=cjs --target=node22 --outfile=backend/dist-desktop/main.cjs --log-level=warning",
     "electron:build": "esbuild electron/main.ts electron/preload.ts --bundle --platform=node --format=cjs --target=node22 --outdir=electron/dist --external:electron --log-level=warning",
-    "db:generate": "prisma generate --schema backend/prisma/schema.prisma",
+    "db:generate": "npm run db:generate --workspace backend",
     "postinstall": "npm run db:generate",
     "typecheck": "npm run typecheck --workspace backend",
-    "test": "npm test --workspace backend"
+    "test": "npm run test --workspace backend && npm run test:sqlite --workspace backend"
   },
   "devDependencies": {
     "electron": "^45.2.3",

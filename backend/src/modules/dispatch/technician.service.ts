@@ -5,6 +5,7 @@ import {
   toPaginatedResult,
   type PaginatedResult,
 } from "../../shared/pagination.js";
+import { containsInsensitive } from "../../shared/prisma-filters.js";
 import type {
   CreateTechnicianInput,
   ListTechniciansQuery,
@@ -13,7 +14,7 @@ import type {
 export const technicianService = {
   async list(query: ListTechniciansQuery): Promise<PaginatedResult<Technician>> {
     const where: Prisma.TechnicianWhereInput = query.search
-      ? { fullName: { contains: query.search, mode: "insensitive" } }
+      ? { fullName: containsInsensitive(query.search) }
       : {};
 
     const [items, total] = await prisma.$transaction([

@@ -2,6 +2,7 @@ import { Prisma, type Establishment } from "@prisma/client";
 
 import { prisma } from "../../prisma/client.js";
 import { NotFoundError } from "../../shared/http-error.js";
+import { containsInsensitive, equalsInsensitive } from "../../shared/prisma-filters.js";
 import {
   toPaginatedResult,
   type PaginatedResult,
@@ -16,17 +17,13 @@ export const establishmentService = {
   async list(query: ListEstablishmentsQuery): Promise<PaginatedResult<Establishment>> {
     const where: Prisma.EstablishmentWhereInput = {
       dispatchOrderId: query.dispatchOrderId,
-      department: query.department
-        ? { equals: query.department, mode: "insensitive" }
-        : undefined,
-      locality: query.locality
-        ? { equals: query.locality, mode: "insensitive" }
-        : undefined,
+      department: query.department ? equalsInsensitive(query.department) : undefined,
+      locality: query.locality ? equalsInsensitive(query.locality) : undefined,
       ...(query.search
         ? {
             OR: [
               { cue: { contains: query.search } },
-              { name: { contains: query.search, mode: "insensitive" } },
+              { name: containsInsensitive(query.search) },
             ],
           }
         : {}),

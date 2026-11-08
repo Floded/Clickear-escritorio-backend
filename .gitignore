@@ -3,6 +3,8 @@ dist/
 dist-desktop/
 electron/dist/
 release/
+# Clientes Prisma generados (postinstall)
+backend/generated/
 .env
 .env.*
 !.env.example
