@@ -26,6 +26,13 @@ Ambos proyectos están desplegados en **Render**:
   `Frontend/server.mjs`, que hace proxy de las rutas `/api` hacia el backend
   remoto.
 
+CI y deploy del monorepo:
+
+- CI: `.github/workflows/test.yml` (migraciones + typecheck + tests) en cada
+  push/PR a `main` o `develop`.
+- Deploy: `render.yaml` en la raíz. Si el servicio ya existe en Render, usar
+  `rootDir: .` con los mismos `buildCommand` / `startCommand`.
+
 ## 2. Objetivo de la migración
 
 Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
@@ -59,8 +66,8 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 - **Proxy ya existente**: el `../Frontend/server.mjs` reenvía `/api` al backend.
   En desktop, el backend embebido servirá las mismas rutas bajo `/api` en
   `localhost`, de modo que el frontend no cambia su configuración de axios.
-- **Monorepo**: este directorio será el workspace raíz de la app de escritorio;
-  `../Backend` y `../Frontend` se consumen por ruta relativa, no se copian.
+- **Monorepo**: `backend/` es workspace y fuente canónica dentro de este repo;
+  el frontend se consume solo por su `dist/` (no se copia).
 
 ## 4. Fases de implementación
 
@@ -126,6 +133,7 @@ Convertir Clickear en una **aplicación de escritorio híbrida con Electron**:
 | 2026-11-08 | —      | Big Pickle (OpenCode)      | Plan definido; directorio y README creados | Nada bloquea. Siguiente: Fase 0, scaffold del workspace `desktop/`. |
 | 2026-11-08 | Spike  | Big Pickle (OpenCode)      | Spike esbuild+Prisma **validado**: bundle CJS autocontenido que arranca y responde HTTP | Fix obligatorio: engine por `PRISMA_QUERY_ENGINE_LIBRARY` + `await import()` (no top-level await en CJS). Siguiente: Fase 0. |
 | 2026-11-08 | 0 y 1  | Big Pickle (OpenCode)      | Workspace + subtree del backend + Electron funcionando: la ventana carga el React real servido por el backend embebido | `createApp({ mode: "desktop" })` sin rate-limit/HSTS/CORS ni `upgrade-insecure-requests`. Tests 160/160. Falta DB real (Fase 2) y packaging (Fase 4). |
+| 2026-11-08 | CI     | Big Pickle (OpenCode)      | CI movido a `.github/workflows/` de la raíz (antes no se ejecutaba por estar en `backend/`), `render.yaml` para deploy del monorepo | `npm ci` en raíz + migraciones + typecheck + tests. Tests 160/160 en verde. |
 
 ### Próximo paso inmediato
 

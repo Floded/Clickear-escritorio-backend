@@ -1,0 +1,25 @@
+# Blueprint de Render para el backend dentro del monorepo.
+# Si el servicio ya existe, alcanza con apuntarlo a este repo y usar estos
+# comandos (o recrearlo como Blueprint y ajustar el nombre).
+services:
+  - type: web
+    name: clickear-backend
+    runtime: node
+    rootDir: .
+    buildCommand: npm ci && npm run build --workspace backend && npm run db:deploy --workspace backend
+    startCommand: npm start --workspace backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Evita descargar el binario de Electron (~100 MB) en el deploy del backend
+      - key: ELECTRON_SKIP_BINARY_DOWNLOAD
+        value: "1"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: "604800"
+      - key: ALLOWED_ORIGIN
+        sync: false
