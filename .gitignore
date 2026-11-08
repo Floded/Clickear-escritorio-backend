@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-desktop/
+electron/dist/
+release/
+.env
+.env.*
+!.env.example
+*.db
+*.db-journal
+*.db-wal
+.DS_Store
